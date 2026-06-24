@@ -1,268 +1,445 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Расписание занятий</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Расписание детей</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pink:#f472b6;--pink-bg:#fce7f3;--pink-light:#fdf2f8;
+  --blue:#3b82f6;--blue-bg:#dbeafe;--blue-light:#eff6ff;
+  --gray:#6b7280;--gray-light:#f3f4f6;--border:#e5e7eb;
+  --radius:12px;--shadow:0 4px 24px rgba(0,0,0,.09);
+}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f8fafc;color:#1f2937;min-height:100vh}
 
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f4f6fa;
-      color: #222;
-      min-height: 100vh;
-    }
+/* HEADER */
+.header{background:#fff;border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.header-title{font-size:1.1rem;font-weight:700}
+.header-title span{font-size:.75rem;font-weight:400;color:var(--gray);display:block}
+.legend{display:flex;gap:12px}
+.legend-chip{display:flex;align-items:center;gap:6px;font-size:.8rem;font-weight:500;padding:4px 10px;border-radius:99px}
+.chip-ailin{background:var(--pink-bg);color:#9d174d}
+.chip-daulet{background:var(--blue-bg);color:#1e40af}
 
-    header {
-      background: #fff;
-      border-bottom: 1px solid #e0e0e0;
-      padding: 18px 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
+/* WEEK NAV */
+.week-nav{background:#fff;border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.week-label{font-size:.95rem;font-weight:600;text-align:center;flex:1}
+.week-label small{display:block;font-size:.75rem;font-weight:400;color:var(--gray)}
+.btn-nav{background:var(--gray-light);border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:1rem;transition:background .15s}
+.btn-nav:hover{background:var(--border)}
+.btn-today-jump{background:#eff6ff;border:none;border-radius:8px;padding:6px 12px;font-size:.8rem;color:var(--blue);cursor:pointer;font-weight:500;transition:background .15s}
+.btn-today-jump:hover{background:var(--blue-bg)}
 
-    header h1 {
-      font-size: 1.3rem;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-    }
+/* TABS */
+.tabs{display:flex;background:#fff;border-bottom:1px solid var(--border);padding:0 20px}
+.tab{flex:1;padding:12px;text-align:center;font-size:.88rem;font-weight:500;color:var(--gray);border-bottom:2px solid transparent;cursor:pointer;transition:all .15s}
+.tab.active{color:#1f2937;border-bottom-color:#1f2937}
 
-    .legend {
-      display: flex;
-      gap: 20px;
-      font-size: 0.9rem;
-    }
+/* COPY BANNER */
+.copy-banner{display:none;background:#fffbeb;border:1px solid #fde68a;border-radius:var(--radius);margin:16px 20px 0;padding:12px 16px;font-size:.85rem;align-items:center;justify-content:space-between;gap:12px}
+.copy-banner.show{display:flex}
+.btn-copy{background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.82rem;cursor:pointer;white-space:nowrap;font-weight:500}
+.btn-copy:hover{background:#d97706}
 
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+/* MAIN */
+.main{padding:16px 20px 100px}
 
-    .legend-dot {
-      width: 16px;
-      height: 16px;
-      border-radius: 4px;
-    }
+/* DAY VIEW */
+.day-tabs{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+.day-tab{flex-shrink:0;padding:8px 14px;border-radius:10px;border:1px solid var(--border);background:#fff;font-size:.82rem;cursor:pointer;text-align:center;transition:all .15s;min-width:56px}
+.day-tab .dt-name{font-weight:600;font-size:.8rem}
+.day-tab .dt-num{font-size:.75rem;color:var(--gray)}
+.day-tab.active{background:#1f2937;color:#fff;border-color:#1f2937}
+.day-tab.active .dt-num{color:#9ca3af}
+.day-tab.is-today{border-color:var(--blue);color:var(--blue)}
+.day-tab.is-today.active{background:var(--blue);border-color:var(--blue);color:#fff}
 
-    .dot-ailin  { background: #f8a4b8; }
-    .dot-daulet { background: #7eb8e8; }
+.day-lessons{display:flex;flex-direction:column;gap:10px}
+.empty-day{text-align:center;padding:48px 20px;color:var(--gray)}
+.empty-day .empty-icon{font-size:2.5rem;margin-bottom:10px}
+.empty-day p{font-size:.9rem}
 
-    .btn-reset {
-      background: #f0f0f0;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 7px 16px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: background .15s;
-    }
-    .btn-reset:hover { background: #e0e0e0; }
+/* WEEK VIEW */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.week-col{}
+.week-col-head{text-align:center;padding:8px 4px;font-size:.75rem;font-weight:600;color:var(--gray);border-radius:8px;margin-bottom:6px;background:#fff;border:1px solid var(--border)}
+.week-col-head.is-today{background:#1f2937;color:#fff;border-color:#1f2937}
+.week-col-head .wc-day{font-size:.8rem;font-weight:700}
+.week-col-head .wc-date{font-size:.7rem;opacity:.7}
+.week-col-body{display:flex;flex-direction:column;gap:5px}
+.week-add-btn{width:100%;border:1.5px dashed var(--border);background:transparent;border-radius:8px;padding:8px 4px;font-size:.7rem;color:var(--gray);cursor:pointer;text-align:center;margin-top:4px;transition:all .15s}
+.week-add-btn:hover{border-color:var(--gray);color:#1f2937}
 
-    .scroll-wrap {
-      overflow-x: auto;
-      padding: 28px 32px 48px;
-    }
+/* LESSON CARD */
+.lesson-card{background:#fff;border-radius:10px;padding:10px 12px;border-left:4px solid transparent;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer;transition:transform .1s,box-shadow .1s;position:relative}
+.lesson-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.lesson-card.ailin{border-left-color:var(--pink);background:var(--pink-light)}
+.lesson-card.daulet{border-left-color:var(--blue);background:var(--blue-light)}
+.lc-time{font-size:.72rem;color:var(--gray);font-weight:500;margin-bottom:2px}
+.lc-subject{font-size:.88rem;font-weight:700;margin-bottom:2px}
+.lc-teacher{font-size:.75rem;color:var(--gray)}
+.lc-child-badge{font-size:.65rem;font-weight:600;padding:2px 6px;border-radius:99px;position:absolute;top:8px;right:8px}
+.badge-ailin{background:var(--pink-bg);color:#9d174d}
+.badge-daulet{background:var(--blue-bg);color:#1e40af}
 
-    table {
-      border-collapse: collapse;
-      min-width: 900px;
-      background: #fff;
-      border-radius: 14px;
-      overflow: hidden;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-    }
+/* week card compact */
+.lesson-card.compact{padding:6px 8px;border-radius:8px}
+.lesson-card.compact .lc-time{font-size:.65rem}
+.lesson-card.compact .lc-subject{font-size:.78rem}
+.lesson-card.compact .lc-teacher{font-size:.68rem}
+.lesson-card.compact .lc-child-badge{display:none}
 
-    thead th {
-      background: #3a3a4a;
-      color: #fff;
-      font-size: 0.88rem;
-      font-weight: 600;
-      padding: 13px 18px;
-      text-align: center;
-      letter-spacing: 0.3px;
-      white-space: nowrap;
-    }
+/* FAB */
+.fab{position:fixed;bottom:28px;right:24px;width:56px;height:56px;border-radius:50%;background:#1f2937;color:#fff;border:none;font-size:1.6rem;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;transition:background .15s,transform .1s;z-index:150}
+.fab:hover{background:#374151;transform:scale(1.07)}
 
-    thead th:first-child { border-radius: 0; }
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:flex-end;justify-content:center}
+.overlay.show{display:flex}
+.modal{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:520px;padding:24px 24px 36px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:1.1rem;font-weight:700;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.btn-close{background:var(--gray-light);border:none;border-radius:50%;width:32px;height:32px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
-    tbody tr { transition: filter .1s; }
-    tbody tr:hover { filter: brightness(0.96); }
+.form-group{margin-bottom:16px}
+.form-label{font-size:.82rem;font-weight:600;color:#374151;margin-bottom:6px;display:block}
+.form-input,.form-select{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:.9rem;font-family:inherit;background:#fff;transition:border-color .15s}
+.form-input:focus,.form-select:focus{outline:none;border-color:#1f2937}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
-    td {
-      padding: 0;
-      border: 1px solid rgba(0,0,0,0.08);
-      vertical-align: middle;
-    }
+.child-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.child-btn{padding:10px;border-radius:10px;border:2px solid var(--border);background:#fff;font-size:.88rem;font-weight:600;cursor:pointer;text-align:center;transition:all .15s}
+.child-btn.sel-ailin{border-color:var(--pink);background:var(--pink-bg);color:#9d174d}
+.child-btn.sel-daulet{border-color:var(--blue);background:var(--blue-bg);color:#1e40af}
 
-    .td-time {
-      padding: 12px 16px;
-      font-weight: 600;
-      font-size: 0.88rem;
-      white-space: nowrap;
-      text-align: center;
-      min-width: 130px;
-    }
+.modal-actions{display:flex;gap:10px;margin-top:24px}
+.btn-save{flex:1;padding:12px;background:#1f2937;color:#fff;border:none;border-radius:12px;font-size:.95rem;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-save:hover{background:#374151}
+.btn-delete{padding:12px 18px;background:#fee2e2;color:#dc2626;border:none;border-radius:12px;font-size:.9rem;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-delete:hover{background:#fecaca}
 
-    .td-child {
-      padding: 12px 16px;
-      font-weight: 600;
-      font-size: 0.88rem;
-      text-align: center;
-      min-width: 90px;
-    }
-
-    .row-ailin  { background: #fde8ef; }
-    .row-daulet { background: #dceefa; }
-
-    .cell-edit {
-      width: 100%;
-      min-width: 130px;
-      min-height: 52px;
-      padding: 10px 14px;
-      border: none;
-      background: transparent;
-      font-family: inherit;
-      font-size: 0.85rem;
-      color: #333;
-      resize: none;
-      line-height: 1.4;
-      cursor: text;
-      outline: none;
-      display: block;
-      transition: background .15s;
-    }
-
-    .cell-edit:focus {
-      background: rgba(255,255,255,0.7);
-      border-radius: 4px;
-    }
-
-    .row-ailin  .cell-edit:focus { background: rgba(255,255,255,0.75); }
-    .row-daulet .cell-edit:focus { background: rgba(255,255,255,0.75); }
-
-    .hint {
-      text-align: center;
-      font-size: 0.8rem;
-      color: #aaa;
-      margin-top: 16px;
-    }
-
-    @media (max-width: 640px) {
-      header { padding: 12px 16px; flex-wrap: wrap; }
-      .scroll-wrap { padding: 16px 8px 40px; }
-    }
-  </style>
+@media(min-width:600px){
+  .overlay{align-items:center}
+  .modal{border-radius:20px;margin:20px}
+}
+@media(max-width:500px){
+  .week-grid{grid-template-columns:repeat(7,minmax(80px,1fr));overflow-x:auto}
+  .main{padding:12px 12px 100px}
+  .day-tabs{gap:4px}
+}
+</style>
 </head>
 <body>
 
-<header>
-  <h1>📅 Расписание занятий</h1>
-  <div class="legend">
-    <div class="legend-item"><div class="legend-dot dot-ailin"></div> Айлин</div>
-    <div class="legend-item"><div class="legend-dot dot-daulet"></div> Даулет</div>
+<div class="header">
+  <div class="header-title">
+    📅 Расписание детей
+    <span>Айлин и Даулет</span>
   </div>
-  <button class="btn-reset" onclick="resetAll()">Сбросить всё</button>
-</header>
+  <div class="legend">
+    <div class="legend-chip chip-ailin">🩷 Айлин</div>
+    <div class="legend-chip chip-daulet">💙 Даулет</div>
+  </div>
+</div>
 
-<div class="scroll-wrap">
-  <table id="schedule">
-    <thead>
-      <tr>
-        <th>Время</th>
-        <th>Ребёнок</th>
-        <th>Понедельник</th>
-        <th>Вторник</th>
-        <th>Среда</th>
-        <th>Четверг</th>
-        <th>Пятница</th>
-        <th>Суббота</th>
-        <th>Воскресенье</th>
-      </tr>
-    </thead>
-    <tbody id="tbody"></tbody>
-  </table>
-  <p class="hint">Нажмите на любую ячейку, чтобы ввести предмет и учителя. Данные сохраняются автоматически.</p>
+<div class="week-nav">
+  <button class="btn-nav" onclick="shiftWeek(-1)">←</button>
+  <div class="week-label">
+    <div id="weekLabel"></div>
+    <small id="weekRange"></small>
+  </div>
+  <button class="btn-nav" onclick="shiftWeek(1)">→</button>
+  <button class="btn-today-jump" onclick="goToday()">Сегодня</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" id="tab-day" onclick="switchTab('day')">День</div>
+  <div class="tab" id="tab-week" onclick="switchTab('week')">Неделя</div>
+</div>
+
+<div class="copy-banner" id="copyBanner">
+  <span>Эта неделя пустая. Скопировать расписание с прошлой недели?</span>
+  <button class="btn-copy" onclick="copyFromLastWeek()">Скопировать</button>
+</div>
+
+<div class="main" id="main"></div>
+
+<button class="fab" onclick="openAdd()" title="Добавить занятие">+</button>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-title">
+      <span id="modalTitle">Новое занятие</span>
+      <button class="btn-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Ребёнок</label>
+      <div class="child-toggle">
+        <button class="child-btn" id="btnAilin" onclick="selectChild('Айлин')">🩷 Айлин</button>
+        <button class="child-btn" id="btnDaulet" onclick="selectChild('Даулет')">💙 Даулет</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">День недели</label>
+      <select class="form-select" id="fDay">
+        <option value="0">Понедельник</option>
+        <option value="1">Вторник</option>
+        <option value="2">Среда</option>
+        <option value="3">Четверг</option>
+        <option value="4">Пятница</option>
+        <option value="5">Суббота</option>
+        <option value="6">Воскресенье</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Начало</label>
+        <input class="form-input" type="time" id="fStart" value="10:00"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Конец</label>
+        <input class="form-input" type="time" id="fEnd" value="11:00"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Предмет</label>
+      <input class="form-input" type="text" id="fSubject" placeholder="Математика, Английский…"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Учитель</label>
+      <input class="form-input" type="text" id="fTeacher" placeholder="Имя учителя"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-save" onclick="saveLesson()">Сохранить</button>
+      <button class="btn-delete" id="btnDelete" style="display:none" onclick="deleteLesson()">Удалить</button>
+    </div>
+  </div>
 </div>
 
 <script>
-  const SLOTS = [
-    { time: '10:00 – 11:00', child: 'Айлин',  cls: 'row-ailin'  },
-    { time: '12:00 – 13:00', child: 'Даулет', cls: 'row-daulet' },
-    { time: '13:00 – 14:00', child: 'Айлин',  cls: 'row-ailin'  },
-    { time: '15:00 – 16:00', child: 'Даулет', cls: 'row-daulet' },
-    { time: '16:00 – 17:00', child: 'Айлин',  cls: 'row-ailin'  },
-    { time: '18:00 – 19:00', child: 'Даулет', cls: 'row-daulet' },
-  ];
+const DAY_NAMES = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const DAY_FULL = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+const MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const KEY = 'kids_schedule_v2';
 
-  const DAYS = 7;
-  const STORAGE_KEY = 'schedule_data';
+let currentWeekMonday = getMonday(new Date());
+let currentTab = 'day';
+let currentDayIdx = todayDayIdx();
+let editingId = null;
+let selectedChild = 'Айлин';
 
-  function loadData() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
-    catch { return {}; }
+// --- DATA ---
+function loadAll(){try{return JSON.parse(localStorage.getItem(KEY))||{};}catch{return {};}}
+function saveAll(d){localStorage.setItem(KEY,JSON.stringify(d));}
+function weekKey(monday){return fmtDate(monday);}
+function getWeekData(monday){const all=loadAll();return all[weekKey(monday)]||[];}
+function setWeekData(monday,arr){const all=loadAll();all[weekKey(monday)]=arr;saveAll(all);}
+
+// --- DATES ---
+function getMonday(d){const dt=new Date(d);const day=dt.getDay();const diff=day===0?-6:1-day;dt.setDate(dt.getDate()+diff);dt.setHours(0,0,0,0);return dt;}
+function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function fmtDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function todayDayIdx(){const d=new Date().getDay();return d===0?6:d-1;}
+function isThisWeek(monday){return fmtDate(monday)===fmtDate(getMonday(new Date()));}
+function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36);}
+
+// --- RENDER ---
+function render(){
+  updateWeekNav();
+  checkCopyBanner();
+  if(currentTab==='day') renderDay();
+  else renderWeek();
+}
+
+function updateWeekNav(){
+  const mon=currentWeekMonday;
+  const sun=addDays(mon,6);
+  const wn=getWeekNumber(mon);
+  document.getElementById('weekLabel').textContent=
+    (isThisWeek(mon)?'Текущая неделя':'Неделя')+' №'+wn+
+    (isThisWeek(mon)?' 📍':'');
+  document.getElementById('weekRange').textContent=
+    mon.getDate()+' '+MONTHS[mon.getMonth()]+' — '+sun.getDate()+' '+MONTHS[sun.getMonth()]+' '+sun.getFullYear();
+}
+
+function checkCopyBanner(){
+  const cur=getWeekData(currentWeekMonday);
+  const prev=getWeekData(addDays(currentWeekMonday,-7));
+  const banner=document.getElementById('copyBanner');
+  if(cur.length===0 && prev.length>0) banner.classList.add('show');
+  else banner.classList.remove('show');
+}
+
+function renderDay(){
+  const lessons=getWeekData(currentWeekMonday).filter(l=>l.day===currentDayIdx);
+  lessons.sort((a,b)=>a.start.localeCompare(b.start));
+
+  let html='<div class="day-tabs">';
+  for(let i=0;i<7;i++){
+    const dt=addDays(currentWeekMonday,i);
+    const isToday=isThisWeek(currentWeekMonday)&&i===todayDayIdx();
+    const count=getWeekData(currentWeekMonday).filter(l=>l.day===i).length;
+    html+=`<div class="day-tab${i===currentDayIdx?' active':''}${isToday?' is-today':''}" onclick="selectDay(${i})">
+      <div class="dt-name">${DAY_NAMES[i]}</div>
+      <div class="dt-num">${dt.getDate()}</div>
+      ${count>0?`<div style="font-size:.65rem;margin-top:2px;opacity:.7">${count}</div>`:''}
+    </div>`;
   }
+  html+='</div><div class="day-lessons">';
 
-  function saveData(data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }
-
-  function cellKey(row, day) { return `${row}_${day}`; }
-
-  function build() {
-    const data = loadData();
-    const tbody = document.getElementById('tbody');
-    tbody.innerHTML = '';
-
-    SLOTS.forEach((slot, row) => {
-      const tr = document.createElement('tr');
-      tr.className = slot.cls;
-
-      const tdTime = document.createElement('td');
-      tdTime.className = 'td-time';
-      tdTime.textContent = slot.time;
-      tr.appendChild(tdTime);
-
-      const tdChild = document.createElement('td');
-      tdChild.className = 'td-child';
-      tdChild.textContent = slot.child;
-      tr.appendChild(tdChild);
-
-      for (let day = 0; day < DAYS; day++) {
-        const td = document.createElement('td');
-        const key = cellKey(row, day);
-        const ta = document.createElement('textarea');
-        ta.className = 'cell-edit';
-        ta.placeholder = 'Предмет\nУчитель';
-        ta.value = data[key] || '';
-        ta.rows = 2;
-        ta.addEventListener('input', () => {
-          const d = loadData();
-          d[key] = ta.value;
-          saveData(d);
-        });
-        td.appendChild(ta);
-        tr.appendChild(td);
-      }
-
-      tbody.appendChild(tr);
+  if(lessons.length===0){
+    html+=`<div class="empty-day"><div class="empty-icon">📭</div><p>Нет занятий</p><p style="margin-top:6px;font-size:.8rem">Нажмите + чтобы добавить</p></div>`;
+  } else {
+    lessons.forEach(l=>{
+      html+=lessonCardHTML(l,false);
     });
   }
+  html+='</div>';
+  document.getElementById('main').innerHTML=html;
+}
 
-  function resetAll() {
-    if (!confirm('Сбросить все данные расписания?')) return;
-    localStorage.removeItem(STORAGE_KEY);
-    build();
+function renderWeek(){
+  const data=getWeekData(currentWeekMonday);
+  let html='<div class="week-grid">';
+  for(let i=0;i<7;i++){
+    const dt=addDays(currentWeekMonday,i);
+    const isToday=isThisWeek(currentWeekMonday)&&i===todayDayIdx();
+    const dayLessons=data.filter(l=>l.day===i).sort((a,b)=>a.start.localeCompare(b.start));
+    html+=`<div class="week-col">
+      <div class="week-col-head${isToday?' is-today':''}">
+        <div class="wc-day">${DAY_NAMES[i]}</div>
+        <div class="wc-date">${dt.getDate()}</div>
+      </div>
+      <div class="week-col-body">`;
+    dayLessons.forEach(l=>{ html+=lessonCardHTML(l,true); });
+    html+=`<button class="week-add-btn" onclick="openAdd(${i})">+</button>`;
+    html+='</div></div>';
   }
+  html+='</div>';
+  document.getElementById('main').innerHTML=html;
+}
 
-  build();
+function lessonCardHTML(l,compact){
+  const cls=l.child==='Айлин'?'ailin':'daulet';
+  const badge=l.child==='Айлин'?'badge-ailin':'badge-daulet';
+  return `<div class="lesson-card ${cls}${compact?' compact':''}" onclick="openEdit('${l.id}')">
+    <div class="lc-time">${l.start} – ${l.end}</div>
+    <div class="lc-subject">${esc(l.subject||'—')}</div>
+    <div class="lc-teacher">${esc(l.teacher||'')}</div>
+    <span class="lc-child-badge ${badge}">${l.child==='Айлин'?'🩷':'💙'} ${l.child}</span>
+  </div>`;
+}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// --- NAV ---
+function shiftWeek(n){currentWeekMonday=addDays(currentWeekMonday,n*7);render();}
+function goToday(){currentWeekMonday=getMonday(new Date());currentDayIdx=todayDayIdx();render();}
+function switchTab(t){
+  currentTab=t;
+  document.getElementById('tab-day').classList.toggle('active',t==='day');
+  document.getElementById('tab-week').classList.toggle('active',t==='week');
+  render();
+}
+function selectDay(i){currentDayIdx=i;renderDay();}
+
+// --- MODAL ---
+function openAdd(dayIdx){
+  editingId=null;
+  selectedChild='Айлин';
+  const d=dayIdx!==undefined?dayIdx:(currentTab==='day'?currentDayIdx:todayDayIdx());
+  document.getElementById('modalTitle').textContent='Новое занятие';
+  document.getElementById('fDay').value=d;
+  document.getElementById('fStart').value='10:00';
+  document.getElementById('fEnd').value='11:00';
+  document.getElementById('fSubject').value='';
+  document.getElementById('fTeacher').value='';
+  document.getElementById('btnDelete').style.display='none';
+  updateChildBtns();
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('fSubject').focus(),100);
+}
+
+function openEdit(id){
+  const all=getWeekData(currentWeekMonday);
+  const l=all.find(x=>x.id===id);
+  if(!l)return;
+  editingId=id;
+  selectedChild=l.child;
+  document.getElementById('modalTitle').textContent='Редактировать';
+  document.getElementById('fDay').value=l.day;
+  document.getElementById('fStart').value=l.start;
+  document.getElementById('fEnd').value=l.end;
+  document.getElementById('fSubject').value=l.subject||'';
+  document.getElementById('fTeacher').value=l.teacher||'';
+  document.getElementById('btnDelete').style.display='';
+  updateChildBtns();
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closeModal(e){
+  if(e&&e.target!==document.getElementById('overlay'))return;
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function selectChild(c){selectedChild=c;updateChildBtns();}
+function updateChildBtns(){
+  document.getElementById('btnAilin').className='child-btn'+(selectedChild==='Айлин'?' sel-ailin':'');
+  document.getElementById('btnDaulet').className='child-btn'+(selectedChild==='Даулет'?' sel-daulet':'');
+}
+
+function saveLesson(){
+  const subject=document.getElementById('fSubject').value.trim();
+  if(!subject){document.getElementById('fSubject').focus();return;}
+  const lesson={
+    id:editingId||uid(),
+    child:selectedChild,
+    day:parseInt(document.getElementById('fDay').value),
+    start:document.getElementById('fStart').value,
+    end:document.getElementById('fEnd').value,
+    subject,
+    teacher:document.getElementById('fTeacher').value.trim(),
+  };
+  let arr=getWeekData(currentWeekMonday);
+  if(editingId) arr=arr.map(x=>x.id===editingId?lesson:x);
+  else arr.push(lesson);
+  setWeekData(currentWeekMonday,arr);
+  document.getElementById('overlay').classList.remove('show');
+  render();
+}
+
+function deleteLesson(){
+  if(!editingId)return;
+  let arr=getWeekData(currentWeekMonday).filter(x=>x.id!==editingId);
+  setWeekData(currentWeekMonday,arr);
+  document.getElementById('overlay').classList.remove('show');
+  render();
+}
+
+function copyFromLastWeek(){
+  const prev=getWeekData(addDays(currentWeekMonday,-7));
+  if(!prev.length)return;
+  const fresh=prev.map(l=>({...l,id:uid()}));
+  setWeekData(currentWeekMonday,fresh);
+  render();
+}
+
+function getWeekNumber(d){
+  const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  const dayNum=dt.getUTCDay()||7;
+  dt.setUTCDate(dt.getUTCDate()+4-dayNum);
+  const yearStart=new Date(Date.UTC(dt.getUTCFullYear(),0,1));
+  return Math.ceil((((dt-yearStart)/86400000)+1)/7);
+}
+
+// keyboard
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') document.getElementById('overlay').classList.remove('show');
+});
+
+render();
 </script>
 </body>
 </html>

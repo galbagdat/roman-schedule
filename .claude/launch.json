@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "schedule",
+      "runtimeExecutable": "/Users/galiya/Desktop/Роман/serve.sh",
+      "runtimeArgs": [],
+      "port": 8765
+    }
+  ]
+}

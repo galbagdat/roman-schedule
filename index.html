@@ -94,6 +94,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f8fafc;color:#1f2937;mi
 /* FAB */
 .fab{position:fixed;bottom:28px;right:24px;width:56px;height:56px;border-radius:50%;background:#1f2937;color:#fff;border:none;font-size:1.6rem;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;transition:background .15s,transform .1s;z-index:150}
 .fab:hover{background:#374151;transform:scale(1.07)}
+.fab-mic{right:92px;background:#7c3aed}
+.fab-mic:hover{background:#6d28d9}
+.fab-mic.listening{background:#dc2626;animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.5)}70%{box-shadow:0 0 0 14px rgba(220,38,38,0)}100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}}
 
 /* MODAL */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:flex-end;justify-content:center}
@@ -107,6 +111,13 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f8fafc;color:#1f2937;mi
 .form-input,.form-select{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:.9rem;font-family:inherit;background:#fff;transition:border-color .15s}
 .form-input:focus,.form-select:focus{outline:none;border-color:#1f2937}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.input-with-mic{display:flex;gap:8px;align-items:center}
+.input-with-mic .form-input{flex:1}
+.btn-mic{flex-shrink:0;width:40px;height:40px;border-radius:10px;border:1.5px solid var(--border);background:#fff;font-size:1.05rem;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.btn-mic:hover{background:var(--gray-light)}
+.btn-mic.listening{background:#fee2e2;border-color:#dc2626;animation:pulse 1.2s infinite}
+.voice-hint{font-size:.78rem;color:var(--gray);margin:-4px 0 16px;padding:8px 10px;background:var(--gray-light);border-radius:8px}
 
 .child-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .child-btn{padding:10px;border-radius:10px;border:2px solid var(--border);background:#fff;font-size:.88rem;font-weight:600;cursor:pointer;text-align:center;transition:all .15s}
@@ -169,6 +180,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f8fafc;color:#1f2937;mi
 
 <div class="main" id="main"></div>
 
+<button class="fab fab-mic" id="voiceFab" onclick="voiceAdd()" title="Добавить занятие голосом">🎤</button>
 <button class="fab" onclick="openAdd()" title="Добавить занятие">+</button>
 
 <!-- MODAL -->
@@ -209,12 +221,19 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f8fafc;color:#1f2937;mi
     </div>
     <div class="form-group">
       <label class="form-label">Предмет</label>
-      <input class="form-input" type="text" id="fSubject" placeholder="Математика, Английский…"/>
+      <div class="input-with-mic">
+        <input class="form-input" type="text" id="fSubject" placeholder="Математика, Английский…"/>
+        <button type="button" class="btn-mic" onclick="dictateInto('fSubject', this)" title="Сказать предмет">🎤</button>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Учитель</label>
-      <input class="form-input" type="text" id="fTeacher" placeholder="Имя учителя"/>
+      <div class="input-with-mic">
+        <input class="form-input" type="text" id="fTeacher" placeholder="Имя учителя"/>
+        <button type="button" class="btn-mic" onclick="dictateInto('fTeacher', this)" title="Сказать имя учителя">🎤</button>
+      </div>
     </div>
+    <div class="voice-hint" id="voiceHint" style="display:none"></div>
     <div class="modal-actions">
       <button class="btn-save" onclick="saveLesson()">Сохранить</button>
       <button class="btn-delete" id="btnDelete" style="display:none" onclick="deleteLesson()">Удалить</button>
@@ -262,6 +281,9 @@ const DEFAULT_TEMPLATE = [
   {"child":"Даулет","day":5,"start":"18:00","end":"19:00","subject":"Верховая езда","teacher":""}
 ];
 
+const VACATION_START = '2026-06-20';
+const VACATION_END = '2026-08-28';
+
 let currentWeekMonday = getMonday(new Date());
 let currentTab = 'day';
 let currentDayIdx = todayDayIdx();
@@ -275,6 +297,19 @@ function weekKey(monday){return fmtDate(monday);}
 function getWeekData(monday){const all=loadAll();return all[weekKey(monday)]||[];}
 function setWeekData(monday,arr){const all=loadAll();all[weekKey(monday)]=arr;saveAll(all);}
 
+function weekOverlapsVacation(monday){
+  const sun=fmtDate(addDays(monday,6));
+  const mon=fmtDate(monday);
+  return mon<=VACATION_END && sun>=VACATION_START;
+}
+
+function autoSeedVacationWeek(){
+  if(weekOverlapsVacation(currentWeekMonday) && getWeekData(currentWeekMonday).length===0){
+    const fresh=DEFAULT_TEMPLATE.map(l=>({...l,id:uid()}));
+    setWeekData(currentWeekMonday,fresh);
+  }
+}
+
 // --- DATES ---
 function getMonday(d){const dt=new Date(d);const day=dt.getDay();const diff=day===0?-6:1-day;dt.setDate(dt.getDate()+diff);dt.setHours(0,0,0,0);return dt;}
 function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
@@ -285,6 +320,7 @@ function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36
 
 // --- RENDER ---
 function render(){
+  autoSeedVacationWeek();
   updateWeekNav();
   checkCopyBanner();
   if(currentTab==='day') renderDay();
@@ -297,7 +333,8 @@ function updateWeekNav(){
   const wn=getWeekNumber(mon);
   document.getElementById('weekLabel').textContent=
     (isThisWeek(mon)?'Текущая неделя':'Неделя')+' №'+wn+
-    (isThisWeek(mon)?' 📍':'');
+    (isThisWeek(mon)?' 📍':'')+
+    (weekOverlapsVacation(mon)?' 🏖️ Каникулы':'');
   document.getElementById('weekRange').textContent=
     mon.getDate()+' '+MONTHS[mon.getMonth()]+' — '+sun.getDate()+' '+MONTHS[sun.getMonth()]+' '+sun.getFullYear();
 }
@@ -412,6 +449,7 @@ function openAdd(dayIdx){
   document.getElementById('fSubject').value='';
   document.getElementById('fTeacher').value='';
   document.getElementById('btnDelete').style.display='none';
+  document.getElementById('voiceHint').style.display='none';
   updateChildBtns();
   document.getElementById('overlay').classList.add('show');
   setTimeout(()=>document.getElementById('fSubject').focus(),100);
@@ -473,6 +511,115 @@ function deleteLesson(){
   render();
 }
 
+// --- VOICE INPUT ---
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+function getRecognizer(){
+  if(!SpeechRecognitionAPI){
+    alert('Голосовой ввод не поддерживается в этом браузере. Попробуйте Chrome или Safari.');
+    return null;
+  }
+  const rec=new SpeechRecognitionAPI();
+  rec.lang='ru-RU';
+  rec.interimResults=false;
+  rec.maxAlternatives=1;
+  return rec;
+}
+
+function dictateInto(fieldId, btn){
+  const rec=getRecognizer();
+  if(!rec)return;
+  btn.classList.add('listening');
+  btn.textContent='●';
+  rec.onresult=(e)=>{
+    const text=e.results[0][0].transcript.trim();
+    const field=document.getElementById(fieldId);
+    field.value=text.charAt(0).toUpperCase()+text.slice(1);
+  };
+  rec.onerror=()=>{};
+  rec.onend=()=>{btn.classList.remove('listening');btn.textContent='🎤';};
+  rec.start();
+}
+
+const DAY_WORDS=[
+  {re:/понедельник/i, day:0},{re:/вторник/i, day:1},{re:/сред[уаы]/i, day:2},
+  {re:/четверг/i, day:3},{re:/пятниц/i, day:4},{re:/суббот/i, day:5},{re:/воскресень/i, day:6},
+];
+
+function parseVoiceText(text){
+  const lower=text.toLowerCase();
+  const result={child:null, day:null, start:null, end:null, subject:null, teacher:null};
+
+  if(/айлин/i.test(lower)) result.child='Айлин';
+  else if(/даулет/i.test(lower)) result.child='Даулет';
+
+  if(/сегодня/i.test(lower)) result.day=todayDayIdx();
+  else if(/завтра/i.test(lower)) result.day=(todayDayIdx()+1)%7;
+  else { for(const dw of DAY_WORDS){ if(dw.re.test(lower)){ result.day=dw.day; break; } } }
+
+  const rangeMatch=lower.match(/(?:с\s*)?(\d{1,2})[:.\s]?(\d{2})?\s*(?:до|по|-|–)\s*(\d{1,2})[:.\s]?(\d{2})?/);
+  const singleMatch=lower.match(/(?:в|на)\s*(\d{1,2})[:.\s]?(\d{2})?\s*(?:часов|часа|час|утра|дня|вечера)?/);
+
+  let cleaned=text;
+  if(rangeMatch){
+    const h1=rangeMatch[1].padStart(2,'0'), m1=(rangeMatch[2]||'00').padStart(2,'0');
+    const h2=rangeMatch[3].padStart(2,'0'), m2=(rangeMatch[4]||'00').padStart(2,'0');
+    result.start=`${h1}:${m1}`; result.end=`${h2}:${m2}`;
+    cleaned=cleaned.replace(rangeMatch[0],' ');
+  } else if(singleMatch){
+    const h=singleMatch[1].padStart(2,'0'), m=(singleMatch[2]||'00').padStart(2,'0');
+    result.start=`${h}:${m}`;
+    const endH=String((parseInt(h)+1)%24).padStart(2,'0');
+    result.end=`${endH}:${m}`;
+    cleaned=cleaned.replace(singleMatch[0],' ');
+  }
+
+  const teacherMatch=cleaned.match(/учител[ьяю]\w*\s+([А-ЯЁ][а-яёА-ЯЁ]+(?:\s+[А-ЯЁ][а-яёА-ЯЁ]+)?)/i);
+  if(teacherMatch){
+    result.teacher=teacherMatch[1];
+    cleaned=cleaned.replace(teacherMatch[0],' ');
+  }
+
+  cleaned=cleaned.replace(/айлин|даулет/gi,' ');
+  cleaned=cleaned.replace(/сегодня|завтра/gi,' ');
+  for(const dw of DAY_WORDS) cleaned=cleaned.replace(dw.re,' ');
+  cleaned=cleaned.replace(/\s+/g,' ').trim();
+  let prevLen;
+  do{
+    prevLen=cleaned.length;
+    cleaned=cleaned.replace(/^(в|на|с|до|по|утра|дня|вечера|часов|часа|час)(\s|$)/i,'').trim();
+    cleaned=cleaned.replace(/(\s)(в|на|с|до|по|утра|дня|вечера|часов|часа|час)$/i,'').trim();
+  }while(cleaned.length!==prevLen && cleaned.length>0);
+  cleaned=cleaned.replace(/^[,.\s-]+|[,.\s-]+$/g,'');
+  if(cleaned) result.subject=cleaned.charAt(0).toUpperCase()+cleaned.slice(1);
+
+  return result;
+}
+
+function voiceAdd(){
+  const rec=getRecognizer();
+  if(!rec)return;
+  const fab=document.getElementById('voiceFab');
+  fab.classList.add('listening');
+  fab.textContent='●';
+  rec.onresult=(e)=>{
+    const text=e.results[0][0].transcript.trim();
+    const parsed=parseVoiceText(text);
+    openAdd(parsed.day!==null?parsed.day:undefined);
+    if(parsed.child) selectChild(parsed.child);
+    if(parsed.start) document.getElementById('fStart').value=parsed.start;
+    if(parsed.end) document.getElementById('fEnd').value=parsed.end;
+    if(parsed.subject) document.getElementById('fSubject').value=parsed.subject;
+    if(parsed.teacher) document.getElementById('fTeacher').value=parsed.teacher;
+    const hint=document.getElementById('voiceHint');
+    hint.style.display='block';
+    hint.textContent='🎤 Распознано: «'+text+'». Проверьте поля перед сохранением.';
+  };
+  rec.onerror=()=>{};
+  rec.onend=()=>{fab.classList.remove('listening');fab.textContent='🎤';};
+  rec.start();
+}
+
 function copyFromLastWeek(){
   const prev=getWeekData(addDays(currentWeekMonday,-7));
   if(!prev.length)return;
@@ -493,11 +640,6 @@ function getWeekNumber(d){
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape') document.getElementById('overlay').classList.remove('show');
 });
-
-(function seedFirstRun(){
-  const all=loadAll();
-  if(Object.keys(all).length===0) loadTemplate();
-})();
 
 render();
 </script>
